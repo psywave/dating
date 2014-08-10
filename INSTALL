@@ -1,0 +1,159 @@
+
+Installation
+============
+
+Packages required
+-----------------
+
+	liblwp-useragent-determined-perl
+	liblwp-protocol-socks-perl
+	libhtml-tree-perl
+	libjson-perl
+	libimage-imlib2-perl
+
+This list is probably incomplete, see Build.PL for complete list.
+
+
+Install Dating modules
+----------------------
+
+	perl Build.PL
+	./Build
+	./Build install
+
+Or simply add path to 'lib' directory to your @INC (read perlmod(1)).
+
+
+Initialize database
+-------------------
+
+1. Create database.
+
+	mysql> create database dating ;
+	mysql> \u dating
+	mysql> set names utf8 ;             
+	mysql> alter database dating character set utf8 collate utf8_general_ci ;
+	mysql> grant all privileges on dating.* to someuser identified by somepass ;
+	mysql> flush privileges ;
+
+2. Create schema.
+
+	scripts/dating-update-sql-schema.pl
+
+3. Create geoname and alternatename tables, see geodata.txt.
+
+4. That's all, run examples/*
+
+
+
+Registration
+============
+
+To download profiles from dating site, you need one or more registered 
+accounts there. Below are instructions for specific dating service.
+
+Mamba
+-----
+
+www.mamba.ru
+
+Mamba has multiple restrictions for obtaining complete public profile 
+information.
+
+1. You cannot select more than five dating 'goals' (flirt/marriage/
+blabla...), and these are the only goals you will see in girl profiles. 
+To get complete information, you currently need two accounts to cover 
+all those checkboxes. Just fetch the profile from at least two accounts, 
+profile data in database will be merged automatically:
+
+	my $me1 = ... # 1st account
+	my $me2 = ... # 2nd account
+
+        my $she = Dating::She->new_from_url ($profile_url, $me1);
+	$she->update_from_page ($me2, pagekey => main);
+        $she->sync_with_db ($dbh, $image_path, $me1);
+
+See perdoc lib/Dating/She.pm for details.
+See examples/30-fetch-from-dating-service.pl for example.
+
+2. You need an email address for verification. Use temporary address
+because mamba will sell it to spammers.
+
+3. There are multiple restrictions for users without a photo.
+Publicly available images are rejected, so perform some geometry 
+manipulation: crop, non-linear resize.
+
+4. User has an option to hide her profile from non-'real' users ('real' 
+are those who confirmed their phone numbers by SMS), to see such profiles 
+you need to confirm SMS in some way.
+
+5. User also has an option to hide her profile from non-'VIP' users 
+('VIP' are those crazies who paid money). Fortunately, girls who select 
+this option are not suitable for dating, so you can safely ignore them.
+
+6. If you don't choose at least three items in 'sex preferences', then 
+no user sex preferences will be shown to you, so drop some junk there.
+
+7. Don't select 'exclude profile from search' checkbox, or mamba 
+will not allow _you_ to search.
+
+8. Select Russian interface language as last step, if you used other 
+than Russian for registration. This is important, or parser won't work.
+It cannot work because mamba transliterates any manual user input 
+to unusable mess if your interface language is set to English.
+
+9. Number of profile viewings is limited to 200 per account per day.
+Temporary ban currently isn't recognized correctly, so don't fetch 
+more than 200 profiles per day from a single account.
+
+
+
+Additional requirements 
+for guessing user location in Mamba
+-----------------------------------
+
+Mamba shows you distance to users.
+
+User position may be estimated from this data. See trilaterate() 
+in lib/Dating/math.pm and https://en.wikipedia.org/wiki/Trilateration.
+
+To get this work, you need to fetch the profile in question from at least 
+three accounts.
+
+During account registration, select some exact location on the map, then 
+reload page and look for your coordinates in page source. They look like:
+
+	lat: 55.6424,
+	lng: 24.8342,
+
+Use these numbers when creating Dating::Me objects:
+
+	my $me = Dating::Me->new ( 
+	    login =>..., password =>..., location => "55.6424 24.8342");
+
+See perldoc lib/Dating/Me.pm for details.
+
+Place your three users at the vertices of triangle, surrounding the area 
+in which you want to guess users locations. Don't make this triangle too
+small, errors are 1-2 km.
+
+Each time as profile in question is downloaded by another Dating::Me object,
+the distance is stored in SQL. As soon as parse() gets third distance, 
+it performs trilateration and stores the result in 'location' field 
+of 'profiles' SQL table. Check:
+
+	SELECT id,location FROM profiles WHERE location IS NOT NULL
+
+Note that Mamba rejects your location if you come from IP address 
+of different country. Use proxy in the subject country.
+
+Once you used proxy and set your location on the map, never login without 
+proxy, and never open any mamba page (saved from anywhere) in browser 
+without proxy. This will readily leak your IP address via javascript and 
+<link rel=, and mamba will reset your location, and even show it in 
+'Travel' section in your profile.
+
+
+If you have any trouble, question or idea, don't hesitate to contact me.
+
+

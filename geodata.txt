@@ -1,0 +1,94 @@
+
+Dating modules use data from geonames.org for deriving coordinates 
+from city names. See city_coordinates() in Dating::misc.
+
+Data downloader and SQL schemes:
+http://codigofuerte.github.com/GeoNames-MySQL-DataImport
+
+Only two tables are used:
+
+	geoname
+	alternatename
+
+For Belarus they are:
+
+	http://download.geonames.org/export/dump/BY.zip
+	http://download.geonames.org/export/dump/alternateNames.zip
+
+
+Installation
+------------
+
+CREATE TABLE `geoname` (
+  `geonameid` int(11) NOT NULL,
+  `name` varchar(200) DEFAULT NULL,
+  `asciiname` varchar(200) DEFAULT NULL,
+  `alternatenames` varchar(4000) DEFAULT NULL,
+  `latitude` decimal(10,7) DEFAULT NULL,
+  `longitude` decimal(10,7) DEFAULT NULL,
+  `fclass` char(1) DEFAULT NULL,
+  `fcode` varchar(10) DEFAULT NULL,
+  `country` varchar(2) DEFAULT NULL,
+  `cc2` varchar(60) DEFAULT NULL,
+  `admin1` varchar(20) DEFAULT NULL,
+  `admin2` varchar(80) DEFAULT NULL,
+  `admin3` varchar(20) DEFAULT NULL,
+  `admin4` varchar(20) DEFAULT NULL,
+  `population` int(11) DEFAULT NULL,
+  `elevation` int(11) DEFAULT NULL,
+  `gtopo30` int(11) DEFAULT NULL,
+  `timezone` varchar(40) DEFAULT NULL,
+  `moddate` date DEFAULT NULL,
+  PRIMARY KEY (`geonameid`),
+  KEY `name` (`name`),
+  KEY `asciiname` (`asciiname`),
+  KEY `latitude` (`latitude`),
+  KEY `longitude` (`longitude`),
+  KEY `fclass` (`fclass`),
+  KEY `fcode` (`fcode`),
+  KEY `country` (`country`),
+  KEY `cc2` (`cc2`),
+  KEY `admin1` (`admin1`),
+  KEY `population` (`population`),
+  KEY `elevation` (`elevation`),
+  KEY `timezone` (`timezone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `alternatename` (
+  `alternatenameId` int(11) NOT NULL,
+  `geonameid` int(11) DEFAULT NULL,
+  `isoLanguage` varchar(7) DEFAULT NULL,
+  `alternateName` varchar(200) DEFAULT NULL,
+  `isPreferredName` tinyint(1) DEFAULT NULL,
+  `isShortName` tinyint(1) DEFAULT NULL,
+  `isColloquial` tinyint(1) DEFAULT NULL,
+  `isHistoric` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`alternatenameId`),
+  KEY `geonameid` (`geonameid`),
+  KEY `isoLanguage` (`isoLanguage`),
+  KEY `alternateName` (`alternateName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- set correct db name in txt dumps instead of "geonames"
+-- before restoring them
+
+LOAD DATA LOCAL INFILE 'BY.txt'
+INTO TABLE geoname
+CHARACTER SET 'UTF8'
+(geonameid, name, asciiname, alternatenames, latitude, longitude, fclass, fcode, country, cc2, admin1, admin2, admin3, admin4, population, elevation, gtopo30, timezone, moddate);
+
+-- huge
+LOAD DATA LOCAL INFILE 'alternateNames.txt'
+INTO TABLE alternatename
+CHARACTER SET 'UTF8'
+(alternatenameid, geonameid, isoLanguage, alternateName, isPreferredName, isShortName, isColloquial, isHistoric);
+
+-- Cleaning up unnecessary alternateNames
+
+DELETE alternatename FROM alternatename LEFT JOIN geoname ON geoname.geonameid=alternatename.geonameid WHERE geoname.geonameid IS NULL
+
+-- Search example
+
+SELECT geoname.latitude, geoname.longitude FROM geoname INNER JOIN alternatename  ON geoname.geonameid=alternatename.geonameid  WHERE alternatename.isoLanguage='ru' AND  ( alternatename.alternateName='Брест' OR alternatename.alternateName='Город Брест' ) ORDER BY geoname.population DESC  LIMIT 1
+

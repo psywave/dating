@@ -1,0 +1,14 @@
+Build.PL
+examples/20-create-and-read-profiles.pl
+examples/30-fetch-from-dating-service.pl
+examples/README
+geodata.txt
+INSTALL
+lib/Dating.pm
+lib/Dating/math.pm
+lib/Dating/Me.pm
+lib/Dating/misc.pm
+lib/Dating/She.pm
+MANIFEST			This list of files
+README.md
+script/dating-update-sql-schema.pl
