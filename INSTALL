@@ -11,7 +11,7 @@ Packages required
 	libjson-perl
 	libimage-imlib2-perl
 
-This list is probably incomplete, see Build.PL for complete list.
+This list is probably incomplete, see Build.PL for requirements.
 
 
 Install Dating modules
@@ -40,7 +40,7 @@ Initialize database
 
 	scripts/dating-update-sql-schema.pl
 
-3. Create geoname and alternatename tables, see geodata.txt.
+3. Optionally create geoname and alternatename tables, see geodata.txt.
 
 4. That's all, run examples/*
 
