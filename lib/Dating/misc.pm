@@ -26,7 +26,7 @@ use Data::Dumper;
 require Exporter;
 our @ISA = qw(Exporter);
 # TODO: don't export that much
-our @EXPORT = qw(safety_delay netsearch parse_anketa_fields fc_ok fc_fail as_trimmed_text_br serialize deserialize update_value $profile_fieldlist @profile_fields $profile_field_placeholders $profile_field_update_placeholders cut_sample trunc2 janis tid_is_runtime sql_statement_debug keybts city_coordinates);
+our @EXPORT = qw(safety_delay netsearch parse_anketa_fields fc_ok fc_fail as_trimmed_text_br serialize deserialize update_value $profile_fieldlist @profile_fields $profile_field_placeholders $profile_field_update_placeholders cut_sample trunc2 janis tid_is_runtime sql_statement_debug keybts city_coordinates secs2str);
 
 our $VERSION = "1.00";
 our $Debug;
@@ -898,6 +898,37 @@ for (keys %hs) {
 }
 return $z;
 } # keybts
+
+
+
+=head2 secs2str
+
+Returns time delta in human-reabable format, not using any special module.
+Localized time names are provided as arguments.
+
+	my $str = secs2str ($seconds,   $year_str,$month_str,$day_str,$hour_str,$min_str,$sec_str);
+	my $str = secs2str (12367,  "year","month","days","hours","minutes","seconds");
+
+=cut
+sub secs2str {
+
+my ($ts, $year_str,$month_str,$day_str,$hour_str,$min_str,$sec_str) = @_;
+
+my $y = int ($ts/31557600);
+my $mo = int ($ts/2629800);
+my $d = int ($ts/86400);
+my $h = int ($ts/3600);
+my $mi = int ($ts/60);
+
+if ($y > 1) { return $y." ".$year_str }
+if ($mo > 1) { return $mo." ".$month_str }
+if ($d > 1) { return $d." ".$day_str }
+if ($h > 1) { return $h." ".$hour_str }
+if ($mi > 1) { return $mi." ".$min_str }
+return $ts." ".$sec_str;
+
+} # secs2str
+
 
 
 =head1 LICENSE
