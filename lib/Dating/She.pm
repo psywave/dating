@@ -1683,7 +1683,7 @@ if($@){
 
 =head2 copy_images
 
-my $rv = $she->copy_to_db ($path, $me);
+my $rv = $she->copy_images ($path, $me);
 
 Fetches $self-{images} having empty 'localpath' property 
 using $me of class Dating::Me and stores them under $path.
