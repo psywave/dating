@@ -43,7 +43,7 @@ use File::Path qw( mkpath );
 use Carp;
 #use Carp qw(cluck);
 
-our $VERSION = "1.00";
+our $VERSION = "1.01";
 #our @ISA    = qw(HTML::TreeBuilder);   # not their child anymore
 our $Debug;
 
@@ -1405,21 +1405,70 @@ if (my $da=$parser->look_down(_tag=>'div', id=>"Albums")) {
 
 elsif ($page =~ /album_(\d*)/) {
 
-# now Dating::Me is needed only in db_dump
-#unless (defined($caller)) { return undef }
+my $albumId = $1;
 
-# mambo.project.FotoViewer('#FotoLayer', { ...
-#		,photos: [].concat([{"id":"1180269334",...],[...],[...
-# using regex instead of fuss with HTML::Element
-my @fca_01=("mamba single album: FotoViewer js block found", 0);
-my @fca_02=("mamba single album: json decoded", 0);
-#
-unless ($content =~ qr/\.FotoViewer\s*\(.*photos\s*:\s*\[\s*\]\s*\.\s*concat\s*\((\[.*?\])\)/s) {
+# now Dating::Me is needed not only in db_dump, but here too for json fetch
+unless (defined($caller)) { 
+	carp "error: caller needed to parse album";
+	return undef;
+}
+
+my $msa="mamba single album: ";
+my @fca_01=($msa."var mambo found", 0);
+my @fca_02=($msa."date in mambo found", 0);
+my @fca_03=($msa."her id in mambo found", 0);
+my @fca_04=($msa."sid in mambo found", 0);
+my @fca_05=($msa."got photo list json", 0);
+my @fca_06=($msa."json decoded", 0);
+
+#                function urlFactory(params, type) {
+#                       var url = ['/mobile/api/v5.17.0.0'];
+#			url.push('/users/' + applicationId);
+#                       url.push('/albums/' + albumId + '/photos/?');
+#                       url.push('limit=' + limit + '&offset=' + offset + '&sid=' + sessionId + '&langId=' + langId + '&dateType=' + dateType);
+
+unless ($content =~ qr/var\s+mambo\s+=\s+{(.*?)};/s) {
 	fc_fail(@fca_01);
 	return undef;
 }
+my $mambo = $1;
+carp "mambo: ".$mambo if $Debug>1;
 fc_ok(@fca_01);
-my $pic_json=$1; $pic_json =~ s/\],\[/,/g; # js concat() surrogate
+
+unless ($mambo =~ qr/time:\s+Number\s*\(\s*'(\d+)'\s*\)/s) {
+	fc_fail(@fca_02);
+	return undef;
+}
+my $mambo_ts = $1;
+carp "mambo_ts: ".$mambo_ts if $Debug>1;
+fc_ok(@fca_02);
+
+unless ($mambo =~ qr/vUserId:\s+(\d+)/s) {
+	fc_fail(@fca_03);
+	return undef;
+}
+my $applicationId = $1;
+carp "applicationId: ".$applicationId if $Debug>1;
+fc_ok(@fca_03);
+
+unless ($mambo =~ qr/sessionId:\s+'(\w+?)'/s) {
+	fc_fail(@fca_04);
+	return undef;
+}
+my $sessionId = $1;
+carp "sessionId: ".$sessionId if $Debug>1;
+fc_ok(@fca_04);
+
+my $get_photo_list_url = "http://www.mamba.ru/mobile/api/v5.17/users/".$applicationId."/albums/".$albumId."/photos/?limit=0&offset=0&sid=".$sessionId."&langId=ru&dateType=timestamp&_=".$mambo_ts."000";
+
+print "getting pictures json\n" if $Debug>0;
+my $pic_json = $caller->get_dating_url ($get_photo_list_url);
+unless (defined $pic_json) {
+	fc_fail(@fca_05);
+	return undef;
+}
+fc_ok(@fca_05);
+
 if ($Debug>1) {
 	#print "found pictures list: $1\n";
 	my $ac; my $pl;
@@ -1434,22 +1483,25 @@ if ($Debug>1) {
 }
 my $imj  = decode_json (encode_utf8($pic_json));
 unless ($imj) {
-	fc_fail(@fca_02);
+	fc_fail(@fca_06);
 	return undef;
 }
-fc_ok(@fca_02);
+fc_ok(@fca_06);
 print Dumper ($imj) if $Debug>1;
-IMAGE: foreach (@$imj) {
+
+IMAGE: foreach (@{$imj->{album}->{photos}}) {
 	# seems like "large">"huge" in mamba, but "large" is absent sometimes
-	my $imgurl = defined $_->{large} ? $_->{large} : $_->{huge};
+	my $imgurl = ((defined $_->{largePhotoUrl}) && ($_->{largePhotoUrl} ne "")) ? $_->{largePhotoUrl} : $_->{hugePhotoUrl};
 	unless (defined($imgurl)) { carp "can't find \"large\" or \"huge\" image, skipping"; next IMAGE };
-	print "picture: ".$imgurl."\n" if $Debug>1;
-	unless (defined($_->{id})) { carp "can't find image ID: ".Dumper($imj); next IMAGE };
+	carp "picture: ".$imgurl."\n" if $Debug>1;
+	unless (defined($_->{id})) { carp "can't find image ID: ".Dumper($_); next IMAGE };
 	my $imgid="mamba/".($_->{id});
 	unless (defined $self->{images}->{$imgid}->{url}) { $self->{nphoto}++ } # consider this image new
 	$self->{images}->{$imgid}->{url}=$imgurl;
 	if (defined($_->{name})) { $self->{images}->{$imgid}->{caption}=$_->{name} };
-	if (defined($_->{intim})) { $self->{images}->{$imgid}->{explicit}=$_->{intim} };
+	if (defined($_->{erotic})) {
+		$self->{images}->{$imgid}->{explicit} = $_->{erotic} ? 1 : 0;
+	}
 }
 
 } # mamba, page=single album

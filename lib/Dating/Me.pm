@@ -26,7 +26,7 @@ use JSON;
 use Data::Dumper;
 use Carp;
 
-our $VERSION = "1.00";
+our $VERSION = "1.01";
 our @ISA    = qw(LWP::UserAgent);
 our $Debug;
 
@@ -362,7 +362,7 @@ if ($Debug>1) {
   close (l_gf);
 }
 
-if ($fres->content_type =~ /^image/) {
+if ($fres->content_type =~ /^image|json/) {
 	# return images without login tests
 	return $content;
 }
@@ -586,5 +586,6 @@ L<Dating::She>
 
 Repository: L<https://github.com/psywave/dating>
 
+=cut
 1;
 
