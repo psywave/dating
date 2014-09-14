@@ -6,9 +6,13 @@ Packages required
 -----------------
 
 	liblwp-useragent-determined-perl
-	liblwp-protocol-socks-perl
 	libhtml-tree-perl
 	libjson-perl
+
+Optional
+--------
+
+	liblwp-protocol-socks-perl
 	libimage-imlib2-perl
 
 This list is probably incomplete, see Build.PL for requirements.

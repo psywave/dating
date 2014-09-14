@@ -17,7 +17,6 @@ my $build = Module::Build->new
 		'HTTP::Request' => 0,
 		'HTTP::Cookies' => 0,
 		'LWP::UserAgent' => 0,
-		'LWP::Protocol::socks' => 0,
 		'JSON' => 0,
 		'URI::Escape' => 0,
 		'HTML::TreeBuilder' => 0,
@@ -27,6 +26,7 @@ my $build = Module::Build->new
 	},
 	recommends => {
 		'Image::Imlib2' => 0,
+		'LWP::Protocol::socks' => 0,
 	},
 	scripts => {
 		'script/dating-update-sql-schema.pl'

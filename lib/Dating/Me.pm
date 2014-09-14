@@ -20,7 +20,6 @@ use HTTP::Request::Common qw(GET);
 use HTTP::Request::Common qw(POST);
 use HTTP::Cookies;
 use LWP::UserAgent;
-use LWP::Protocol::socks;
 use Dating::misc qw(safety_delay);
 use JSON;
 use Data::Dumper;
@@ -38,8 +37,13 @@ my $valid_mamba_login_criterion="auth:			1";
 my $tmp="/tmp";
 
 BEGIN {
-   binmode(STDOUT, ':encoding(UTF-8)');
-   binmode(STDERR, ':encoding(UTF-8)');
+	binmode(STDOUT, ':encoding(UTF-8)');
+	binmode(STDERR, ':encoding(UTF-8)');
+	eval {  
+		require LWP::Protocol::socks;
+		LWP::Protocol::socks->import();
+	};
+	#if ($@) { ...}
 }
 
 =encoding UTF-8
@@ -78,9 +82,10 @@ Mandatory
 
 Mandatory
 
-=head2 refpoint
+=head2 location
 
-Own coordinates which were supplied during account registration.
+Own coordinates which were supplied during account registration, 
+in the following format: "51.5672 26.5713" (see "user location" in INSTALL).
 
 =head2 captcha_callback
 
@@ -113,15 +118,16 @@ Cookies are not shared or saved. Beware IP and timing correlations.
 
 =item %options are LWP::UserAgent::new options 
 (agent, local_address, env_proxy etc, default should be fine)
-and the following additional options related to dating service:
+and the following additional options related to dating service 
+(for details see description of the same attributes above):
 
   login
   password
   location
   captcha_callback
   cookies_dir
-  socks (socks proxy URI if LWP::Protocol::socks used)
-  socks_anon (for anon_ua, see above)
+  proxy (proxy URI: http://host:port/ or socks://host:port if LWP::Protocol::socks found)
+  proxy_anon (for anon_ua, see above)
 
 Session is persistent due to cookies file (one per login), 
 placed in cookies_dir (default is current directory).
@@ -144,18 +150,18 @@ my $p = delete $options{password};
 my $r = delete $options{location};
 my $cc = delete $options{captcha_callback};
 my $cdir = delete $options{cookies_dir}; $cdir="." unless defined $cdir;
-my $so = delete $options{socks};
-my $soa = delete $options{socks_anon};
+my $pro = delete $options{proxy};
+my $proa = delete $options{proxy_anon};
 
 unless ($options{'agent'}) { $options{'agent'}=$def_agent };
 unless ($options{'parse_head'}) { $options{'parse_head'}=0 };
 
 my $self = LWP::UserAgent::new($class, %options);
 #bless $self, $class;
-$self->proxy([qw(http https)] => $so) if $so;
+$self->proxy([qw(http https ftp)] => $pro) if $pro;
 
 $self->{anon_ua} = LWP::UserAgent->new( agent => $def_agent );
-$self->{anon_ua}->proxy([qw(http https)] => $soa) if $soa;
+$self->{anon_ua}->proxy([qw(http https ftp)] => $proa) if $proa;
 
 $self->{login}=$l;
 $self->{password}=$p;
