@@ -68,7 +68,7 @@ Client robot features
        automatically via callback function (example may be provided on
        request).
 
-    *  Changes in 3rd party html structure are easily detected, see
+    *  Changes in 3rd party html and json structure are easily detected, see
        fc_ok/fc_fail functions. Should some parser feature fail repeatedly,
        just update the modules from git.
 
