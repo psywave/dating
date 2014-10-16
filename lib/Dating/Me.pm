@@ -33,7 +33,7 @@ $Debug = 1 unless defined $Debug;
 # 1 - short overview of execution flow
 # 2 - debug
 
-my $valid_mamba_login_criterion="auth:			1";
+my $valid_mamba_login_criterion=qr/auth:\s*1/;
 my $tmp="/tmp";
 
 BEGIN {
