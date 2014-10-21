@@ -1628,7 +1628,7 @@ my $selrow = "
 SELECT $profile_fieldlist FROM profiles WHERE id=?
 ";
 my $sth= $dbh->prepare($selrow);
-$sth->execute($self->{id});
+$sth->execute($self->{id}) or do { carp "merge_from_db: profile reading failed"; return 0 };
 if (my @row = $sth->fetchrow_array) {
 	$dbh->commit; # to finish transaction. perhaps not needed?
 	print Dumper(@row) if $Debug>1;
