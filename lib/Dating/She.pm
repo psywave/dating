@@ -1451,7 +1451,7 @@ my $applicationId = $1;
 carp "applicationId: ".$applicationId if $Debug>1;
 fc_ok(@fca_03);
 
-unless ($mambo =~ qr/sessionId:\s+'(\w+?)'/s) {
+unless ($mambo =~ qr/cometSid:\s+'(\w+?)'/s) {
 	fc_fail(@fca_04);
 	return undef;
 }
