@@ -90,7 +90,7 @@ in the following format: "51.5672 26.5713" (see "user location" in INSTALL).
 =head2 captcha_callback
 
 Reference to subroutine which takes content of page with recaptcha
-and returns raw POST data for dating site (/tips on mamba).
+and returns raw POST data for dating site (/tips on mamba) or undef on error.
 See examples/fetcher.pl.
 
 Obsoleted: Reference to subroutine which takes image content as argument
@@ -383,9 +383,11 @@ CheckEntercode:
 if ($content =~ /Введите код/) {
 	# 2014: recaptcha.
 	# callback accepts $content,
-	# returns raw POST data for /tips
+	# returns raw POST data for /tips or undef on timeout
+	# TODO: error handling instead of confess()
 	if (defined ($self->{captcha_callback}) && ref($self->{captcha_callback})) {
 		my $cap_raw_post = &{ $self->{captcha_callback} } ($content);
+		unless (defined $cap_raw_post) { confess ("can't resolve captcha"); }
 		my $recreq = POST 'http://www.mamba.ru/tips';
 		$recreq->content( $cap_raw_post );
 		safety_delay;
