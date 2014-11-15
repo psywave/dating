@@ -677,19 +677,19 @@ J: 	for (my $j=$i+1; $j<=($#dk); $j++) {
 K: 		for (my $k=$j+1; $k<=($#dk); $k++) {
 			$di3=$self->{distance}->{$dk[$k]};
 			if ($dk[$k] =~ /(-?\d+\.\d+)\D+(-?\d+\.\d+)/) { $la3=$1; $lo3=$2 } else { next K }
-			print "testing if refpoints $i $j $k are suitable for trilateration\n" if $Debug>0;
+			print STDERR "testing if refpoints $i $j $k are suitable for trilateration\n" if $Debug>0;
 			my $refpt_sum = distance($la3, $lo3, $la2, $lo2) +
 				distance($la2, $lo2, $la1, $lo1) +
 				distance($la1, $lo1, $la3, $lo3); # perimeter of reference triangle
 			my $dist_sum = $di1+$di2+$di3; # sum of reference distances
 			if (($dist_sum > $refpt_sum) || ($Debug>1)) {
-				print "reference triangle perimeter = ".$refpt_sum.", reference distances sum = ".$di1."+".$di2."+".$di3."=".$dist_sum." km\n";
+				print STDERR "reference triangle perimeter = ".$refpt_sum.", reference distances sum = ".$di1."+".$di2."+".$di3."=".$dist_sum." km\n";
 			}
 			if ($dist_sum > $refpt_sum) {
-				print "skipping triple\n" if $Debug>0;
+				print STDERR "skipping triple\n" if $Debug>0;
 				next K;
 			} else {
-				print "refpoints triple is suitable for trilateration\n" if $Debug>0;
+				print STDERR "refpoints triple is suitable for trilateration\n" if $Debug>0;
 			}
 			($self->{location_lat}, $self->{location_lon}) = trilaterate (
 				$la1,$lo1,$di1, 
@@ -700,17 +700,17 @@ K: 		for (my $k=$j+1; $k<=($#dk); $k++) {
 			if ($self->{location_lat} && $self->{location_lon}) {
 				$self->{location} = $self->{location_lat}." ".
 				  $self->{location_lon};
-				print "successfully trilaterated\n" if $Debug>0;
+				print STDERR "successfully trilaterated\n" if $Debug>0;
 				my $city_location_distance = distance ($self->{city_lat}, $self->{city_lon}, 
 				  $self->{location_lat}, $self->{location_lon});
 				if ((defined $city_location_distance) && ($city_location_distance < 2.0)) {
-					print "but city_location_distance=".$city_location_distance." < 2.0 - deleting location\n" if $Debug>0;
+					print STDERR "but city_location_distance=".$city_location_distance." < 2.0 - deleting location\n" if $Debug>0;
 					$self->{location_lat}=undef; $self->{location_lon}=undef;
 				} else {
 					return 1;
 				}
 			} else {
-				print "trilaterate failed\n" if $Debug>0;
+				print STDERR "trilaterate failed\n" if $Debug>0;
 			}
 		} # K
 	} # J
@@ -771,7 +771,7 @@ if ($flags{'me'}) {
 }
 
 my $parser_ret;
-print "parsing ".$page."\n" if $Debug>0;
+print STDERR "parsing ".$page."\n" if $Debug>0;
 
 $self->{ctime} = time();
 
@@ -837,7 +837,7 @@ if (my $ul = $parser->look_down( _tag => 'ul', class=>'nav' )) {
 			if ($pname =~ /album/) {fc_ok(@fp12);} else {fc_fail(@fp12);}
 			if ($pname =~ "self-portrait") {fc_ok(@fp13); } else { fc_fail(@fp13); }
 			if ($pname !~ qr/main|album|self-portrait|diary|apps|travel/) {
-				print "unknown page: $pname\n" if $Debug>0;
+				print STDERR "unknown page: $pname\n" if $Debug>0;
 				fc_fail(@fp40);
 			}
 			$self->{pages}->{$pname} = $a->{href};
@@ -1108,7 +1108,7 @@ my @fcaf17=("mamba form field is _languages_", 100);
 foreach ( keys %fields ) {
 	my ($c, $is_entered_manually) = ( $fields{$_}[0], $fields{$_}[1] );
 	# here we have:
-	print "title: \"$_\" content: \"$c\" is_entered_manually: ".$is_entered_manually."\n" if $Debug>1;
+	print STDERR "title: \"$_\" content: \"$c\" is_entered_manually: ".$is_entered_manually."\n" if $Debug>1;
 
 	TITLE: {  # portable
 
@@ -1285,7 +1285,7 @@ foreach ( keys %fields ) {
 	} else {
 
 		fc_fail(@fcaf01); # unknown field
-		print "Unknown form field: ".$_."\n" if $Debug>0;
+		print STDERR "Unknown form field: ".$_."\n" if $Debug>0;
 	}
 
 	}}}}}}}}}}}}}}}}
@@ -1461,7 +1461,7 @@ fc_ok(@fca_04);
 
 my $get_photo_list_url = "http://www.mamba.ru/mobile/api/v5.17/users/".$applicationId."/albums/".$albumId."/photos/?limit=0&offset=0&sid=".$sessionId."&langId=ru&dateType=timestamp&_=".$mambo_ts."000";
 
-print "getting pictures json\n" if $Debug>0;
+print STDERR "getting pictures json\n" if $Debug>0;
 my $pic_json = $caller->get_dating_url ($get_photo_list_url);
 unless (defined $pic_json) {
 	fc_fail(@fca_05);
@@ -1470,16 +1470,16 @@ unless (defined $pic_json) {
 fc_ok(@fca_05);
 
 if ($Debug>1) {
-	#print "found pictures list: $1\n";
+	#print STDERR "found pictures list: $1\n";
 	my $ac; my $pl;
 	open ($ac, ">:utf8", "albcontent.html");
 	print $ac $content;
 	close ($ac);
-	print "album content dumped to albcontent.html\n";
+	print STDERR "album content dumped to albcontent.html\n";
 	open ($pl, ">:utf8", "piclist.json");
 	print $pl $pic_json;
 	close ($pl);
-	print "pictures list dumped to piclist.json\n";
+	print STDERR "pictures list dumped to piclist.json\n";
 }
 my $imj  = decode_json (encode_utf8($pic_json));
 unless ($imj) {
@@ -1487,7 +1487,7 @@ unless ($imj) {
 	return undef;
 }
 fc_ok(@fca_06);
-print Dumper ($imj) if $Debug>1;
+print STDERR Dumper ($imj) if $Debug>1;
 
 IMAGE: foreach (@{$imj->{album}->{photos}}) {
 	# seems like "large">"huge" in mamba, but "large" is absent sometimes
@@ -1631,21 +1631,21 @@ my $sth= $dbh->prepare($selrow);
 $sth->execute($self->{id}) or do { carp "merge_from_db: profile reading failed"; return 0 };
 if (my @row = $sth->fetchrow_array) {
 	$dbh->commit; # to finish transaction. perhaps not needed?
-	print Dumper(@row) if $Debug>1;
+	print STDERR Dumper(@row) if $Debug>1;
 	my $own_ctime=$self->{ctime}; my $db_ctime;
 	for (@profile_fields) {
 		my $v = shift @row;
-		print "deserializing: ".$_ . "---->" . $v ."\n" if $Debug>1;
+		print STDERR "deserializing: ".$_ . "---->" . $v ."\n" if $Debug>1;
 		if ($_=~"ctime") {
 			# must be first value parsed
 			$db_ctime=$v; 
-			print "db_ctime=".$db_ctime." own_ctime=".$own_ctime." -> ".(($own_ctime<$db_ctime)?"db":"mine")." are newer\n" if $Debug>1;
+			print STDERR "db_ctime=".$db_ctime." own_ctime=".$own_ctime." -> ".(($own_ctime<$db_ctime)?"db":"mine")." are newer\n" if $Debug>1;
 		}
 		if ($_=~"images") {
 			# special case: merge each image to preserve {localpath}
 			my %im = %{deserialize ($v)};
 			for (keys %im) {
-				print "image localpath in db: ".$im{$_}->{localpath}."\n" if $Debug>1;
+				print STDERR "image localpath in db: ".$im{$_}->{localpath}."\n" if $Debug>1;
 				$self->{images}->{$_} = update_value ($im{$_}, 
 				  $self->{images}->{$_},
 				  ((!defined $own_ctime) or ($own_ctime<$db_ctime))
@@ -1709,14 +1709,14 @@ eval {
 	#my $values = join ", ", map { $dbh->quote(serialize($self->{$_})) } @profile_fields;
 	my @values = map { serialize($self->{$_}) } @profile_fields;
 	my $id_val = serialize($self->{id});
-	#print "inserting values: ".$values."\n" if $Debug>1;
+	#print STDERR "inserting values: ".$values."\n" if $Debug>1;
 	my $repl = qq{
 
 	INSERT INTO profiles ( id, $profile_fieldlist ) VALUES ( ?, $profile_field_placeholders )
 	ON DUPLICATE KEY UPDATE $profile_field_update_placeholders
 	};
 
-	print "replace query: ".$repl."\n" if $Debug>1;
+	print STDERR "replace query: ".$repl."\n" if $Debug>1;
 	my $sth=$dbh->prepare($repl);
 	$sth->execute ($id_val, @values, @values);
 };
@@ -1768,7 +1768,7 @@ IMG: for my $ikey (keys ($self->{images})) {
 	my $localfile=$prefix."/".$localpath;
 
 	unless (open (IMGF, ">", $localfile)) { carp ("can't open $localfile: $!"); next IMG };
-	if (syswrite IMGF, $image) { print "dumped ".$localpath."\n" if $Debug>0; };
+	if (syswrite IMGF, $image) { print STDERR "dumped ".$localpath."\n" if $Debug>0; };
 	close (IMGF);
 
 	$self->{images}->{$ikey}->{localpath} = $localpath; # done, don't fetch next time
@@ -1776,7 +1776,7 @@ IMG: for my $ikey (keys ($self->{images})) {
 	my $e=$self->{images}->{$ikey}->{explicit};
 	if ((defined($e)) and ($e!=0)) {
 		# post cdn url to gallery or irc?
-		print "fap!\n" if $Debug>0;
+		print STDERR "fap!\n" if $Debug>0;
 	}
 
 	if ($self->{icon_localpath}) { goto nothumb; }
@@ -1790,7 +1790,7 @@ IMG: for my $ikey (keys ($self->{images})) {
 		carp ("can't use Image::Imlib2 (libimage-imlib2-perl) - can't create thumbnail");
 		goto nothumb;
 	}
-	print ("creating thumbnail\n") if $Debug>0;
+	print STDERR "creating thumbnail\n" if $Debug>0;
 	my $orig = Image::Imlib2->load($localfile);
 	#my $height = $tn->height;
 	# you can set $x or $y to zero and it will maintain aspect ratio
@@ -1798,7 +1798,7 @@ IMG: for my $ikey (keys ($self->{images})) {
 	my $tn_localpath="mamba/".$dir."/tn_".$fname;
 	my $tn_localfile=$prefix."/".$tn_localpath;
 	$tn->save($tn_localfile);
-	print ("dumped ".$tn_localpath."\n") if $Debug>0;
+	print STDERR "dumped ".$tn_localpath."\n" if $Debug>0;
 	$self->{icon_localpath} = $tn_localpath;
 nothumb:
 

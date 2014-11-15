@@ -187,7 +187,7 @@ for my $div ($parser->look_down( _tag => 'div', class => "b-anketa_field")) {
 	} else {
 		fc_fail(@fpaf02);
 	}
-	print "title: \"$field_title\" content: \"$field_content\"\n" if $Debug>1;
+	print STDERR "title: \"$field_title\" content: \"$field_content\"\n" if $Debug>1;
 	$fields{$field_title} = [ $field_content, $is_entered_manually ];
 }
 unless ($fcp) { fc_fail(@fpaf01); }
@@ -218,13 +218,13 @@ my $chunk;
 
 unless ($where =~ /\w+\W+((\w+\W+){10})/) { return undef }  # too small to search
 
-#print "chunk after word match: '$chunk'\n";
+#print STDERR "chunk after word match: '$chunk'\n";
 $chunk = $1;
 $chunk =~ s/\"//g;
 
 foreach ( keys %{$netsearch_results_cache} ) {
 	if ($_ eq $chunk) {
-		print "netsearch: found in internal cache\n" if $Debug>1;
+		print STDERR "netsearch: found in internal cache\n" if $Debug>1;
 		return $netsearch_results_cache->{$_};
 	}
 }
@@ -256,8 +256,8 @@ my $link = "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=".uri_escap
 #$ua = LWP::UserAgent->new(parse_head => 0);
 #$ua->agent("Mozilla/5.0 ........"); # google refuses default
 safety_delay;
-print "google: requesting \"".$chunk."\"\n" if $Debug>0;
-print "google: link: ".$link."\n" if $Debug>0;
+print STDERR "google: requesting \"".$chunk."\"\n" if $Debug>0;
+print STDERR "google: link: ".$link."\n" if $Debug>0;
 $gres = $ua->get($link);
 
 $gcont = $gres->decoded_content;
@@ -294,12 +294,12 @@ $t->eof();
 
 for my $gli ($t->look_down(_tag=>'li', class=>'g')) {
 	if (my $ga=$gli->look_down(_tag=>'a')) {
-		print "got link: ".$ga->{href}."\n" if $Debug>1;
+		print STDERR "got link: ".$ga->{href}."\n" if $Debug>1;
 		if ($ga->{href} =~ 
   /anketa\.phtml\?oid=|\/mb(\d+)\/|Знакомства Мамба|afolder=|RSS Знакомства|\/id(\/|\&)|\/ru\/diary\//) {
 			fc_fail(@gofc02);
 		} else {
-			print "proof found!\n" if $Debug>1;
+			print STDERR "proof found!\n" if $Debug>1;
 			fc_ok(@gofc02);
 			$netsearch_results_cache->{$chunk}=$link;
 			return $link;
@@ -334,7 +334,7 @@ $greq = HTTP::Request->new(GET => $link);
 #$lreq->header("Referer" => "Referer: ....");
 
 safety_delay;
-print "duckduckgo: requesting \"".$chunk."\"\n" if $Debug>0;
+print STDERR "duckduckgo: requesting \"".$chunk."\"\n" if $Debug>0;
 $gres = $ua->request($greq);
 
 $gcont = $gres->decoded_content;
@@ -373,12 +373,12 @@ $t->eof();
 for my $dres ($t->look_down(_tag=>'div', class=>qr/results_links/)) {
 	# <a rel="nofollow" class="large" href="http://www.i
 	if (my $ra=$dres->look_down(_tag=>'a', class=>'large')) {
-		print "got link: ".$ra->{href}."\n" if $Debug>1;
+		print STDERR "got link: ".$ra->{href}."\n" if $Debug>1;
 		if ($ra->{href} =~ 
   /anketa\.phtml\?oid=|\/mb(\d+)\/|Знакомства Мамба|afolder=|RSS Знакомства|\/id(\/|\&)|\/ru\/diary\//) {
 			fc_fail(@dofc02);
 		} else {
-			print "proof found!\n" if $Debug>1;
+			print STDERR "proof found!\n" if $Debug>1;
 			fc_ok(@dofc02);
 			$netsearch_results_cache->{$chunk}=$link;
 			return $link;
@@ -787,7 +787,7 @@ sub cut_sample {
 my $where=shift;
 my $needle=shift;
 
-#print "\nwhere=".$where."\nneedle=".$needle."\n";
+#print STDERR "\nwhere=".$where."\nneedle=".$needle."\n";
 if (ref ($where)) {
 	confess ("cut_sample called on reference: ".Dumper($where));
 }
@@ -835,7 +835,7 @@ sub janis {
 
 my ($f,$n,$r,$t)=@_;
 
-print ("janis: f=".$f." n=".$n." r=".$r." t=".$t."\n") if $Debug>0;
+print STDERR "janis: f=".$f." n=".$n." r=".$r." t=".$t."\n" if $Debug>1;
 
 if ($r*$t==0) {
 	return undef
