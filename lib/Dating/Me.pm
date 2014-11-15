@@ -206,7 +206,7 @@ my $cap="";
 
 Getroot:
 
-print "getting /\n" if $Debug>0;
+print STDERR "getting /\n" if $Debug>0;
 
 $lreq = GET 'http://www.mamba.ru/';
 safety_delay;
@@ -220,24 +220,24 @@ if ($Debug>1) {
 my $captcha_uri;
 if ($lres->decoded_content =~ /"(\/captcha\.php\?.*)"/ ) { $captcha_uri = $1; }
   else { $captcha_uri=""; }
-print "captcha_uri=".$captcha_uri . "\n" if $Debug>1;
+print STDERR "captcha_uri=".$captcha_uri . "\n" if $Debug>1;
 
 # get new feature: s_post=[32 chars] from mambo js structure on main page
 my $s_post;
 if ($lres->decoded_content =~ /'&s_post=(\w*)'/ ) { $s_post = $1; }
   else { $s_post=""; }
-print "s_post=".$s_post . "\n" if $Debug>1;
+print STDERR "s_post=".$s_post . "\n" if $Debug>1;
 
 if (($Debug>0) and ($lres->decoded_content =~ /$valid_mamba_login_criterion/)) {
-	print "already authenticated\n";
+	print STDERR "already authenticated\n";
 } else {
-	print "not authenticated\n";
+	print STDERR "not authenticated\n";
 
 ####### POST login
 
 Plogin:
 
-printf "POST login (\$captcha=$cap)\n" if $Debug>0;
+printf STDERR "POST login (\$captcha=$cap)\n" if $Debug>0;
 
 if ($cap =~ /^$/) {
 	$lreq = POST 'http://www.mamba.ru/ajax/login.phtml?XForm=Login', 
@@ -277,7 +277,7 @@ unless ($t_1) {
 	}
 	confess "ajax login returns something not parseable as json";
 }
-print Dumper ($t_1) if $Debug>1;
+print STDERR Dumper ($t_1) if $Debug>1;
 
 # success:
 # {"t":"1342491046994","a":474170573,"s":1,"e":0,"d":[],"r":"","XForms":0}
@@ -290,13 +290,13 @@ unless ($t_1->{"a"} > 0) {
 }
 
 if ( (!($t_1->{"captcha"})) || ($t_1->{"captcha"} != 1) ) {
-	print "no captcha after POST login\n" if $Debug>0;
+	print STDERR "no captcha after POST login\n" if $Debug>0;
 } else {
 
 #### Captcha
 
-print "captcha is requested after POST login\n" if $Debug>0;
-print "captcha: $t_1->{'d'}->{'captcha_title'}\n" if $Debug>1;
+print STDERR "captcha is requested after POST login\n" if $Debug>0;
+print STDERR "captcha: $t_1->{'d'}->{'captcha_title'}\n" if $Debug>1;
 
 confess ("recaptcha is not handled in POST login");
 # old captcha variant:
@@ -328,7 +328,7 @@ goto Getroot;
 
 } # GET / requires login
 
-print "assuming logged in\n" if $Debug>0;
+print STDERR "assuming logged in\n" if $Debug>0;
 
 return (1==1);
 } # login
@@ -353,7 +353,7 @@ my $freq; my $fres; my $content; my $recreq; my $recres;
 $url or do { carp "get_dating_url requires url"; return undef };
 
 do {
-print "fetching ".$url."\n" if $Debug>1;
+print STDERR "fetching ".$url."\n" if $Debug>1;
 $freq = GET $url;
 
 safety_delay;
@@ -374,7 +374,7 @@ if ($fres->content_type =~ /^image|json/) {
 }
 
 if ($content !~ /$valid_mamba_login_criterion/ ) { 
-	print "need login\n" if $Debug>0;
+	print STDERR "need login\n" if $Debug>0;
 	$self->login(); 
 	$self->cookie_jar->load();
 	}
@@ -425,7 +425,7 @@ my $freq; my $fres; my $content;
 
 $url or do { carp "get_anon_url requires url"; return undef };
 
-print "fetching anon ".$url."\n" if $Debug>1;
+print STDERR "fetching anon ".$url."\n" if $Debug>1;
 $freq = GET $url;
 
 safety_delay;
@@ -504,9 +504,9 @@ my @profile_links;
 for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 
 	$still_anything_new=0;
-	print "search results offset: $offset\n" if $Debug>0;
+	print STDERR "search results offset: $offset\n" if $Debug>0;
 
-	print "search request: GET ".$search_query_nooffset."&offset=".$offset."\n" if ($Debug>1);
+	print STDERR "search request: GET ".$search_query_nooffset."&offset=".$offset."\n" if ($Debug>1);
 	my $req = GET $search_query_nooffset."&offset=".$offset ;
 
 	safety_delay;
@@ -523,7 +523,7 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 	}
 
 	if ($srch_cnt !~ /$valid_mamba_login_criterion/ ) { 
-		print "need login\n" if $Debug>0;
+		print STDERR "need login\n" if $Debug>0;
 		$self->login(); 
 		$self->cookie_jar->load();
 	}
@@ -555,7 +555,7 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 		}
 
 		if ($record_is_needed) {
-			print "new profile: $id \n" if $Debug>0;
+			print STDERR "new profile: $id \n" if $Debug>0;
 			$still_anything_new=1;
 			push @profile_links, $prolink;
 		} # profile is not seen or count<maxresults
