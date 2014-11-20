@@ -468,7 +468,9 @@ Takes the list of options:
 
 =item maxresults
 
-=item deep (0/1. If 1, then search until exactly maxresults obtained (or forever, if maxresults is not supplied). Otherwise, search until at least one new profile is returned (default).
+=item deep (0/1. If 1, then search until exactly maxresults obtained (or forever, if maxresults is not supplied). Otherwise, search until no new profile appears on search result page (default)
+
+=item additional_profile_table (if ID found in this sql table, then don't return this ID in search results, as if it were found in profiles)
 
 =back
 
@@ -537,8 +539,8 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 		my $record_is_needed=1;
 		if (defined ($f{'db'})) {
 			my $sth = $f{'db'}->prepare( "
-			SELECT id, nick FROM profiles WHERE id LIKE '%/".$id."' OR pages LIKE '%".$prolink."%' ;
-			");
+			SELECT id, nick FROM profiles WHERE id LIKE '%/".$id."' OR pages LIKE '%".$prolink."%'
+			".(defined($f{'additional_profile_table'}) ? " UNION SELECT id, nick FROM ".$f{'additional_profile_table'}." WHERE id LIKE '%/".$id."' OR pages LIKE '%".$prolink."%'" : ""));
 			$sth->execute;
 			if ($sth->rows > 0) {
 				$record_is_needed=0;
