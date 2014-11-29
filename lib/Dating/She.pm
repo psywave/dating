@@ -47,7 +47,7 @@ our $VERSION = "1.01";
 #our @ISA    = qw(HTML::TreeBuilder);   # not their child anymore
 our $Debug;
 
-$Debug = 1 unless defined $Debug;
+$Debug = 2 unless defined $Debug;
 # 1 - short overview of execution flow
 # 2 - debug
 

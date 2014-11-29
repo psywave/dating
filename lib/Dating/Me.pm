@@ -22,6 +22,7 @@ use HTTP::Cookies;
 use LWP::UserAgent;
 use Dating::misc qw(safety_delay);
 use JSON;
+use Encode qw( encode_utf8 );
 use Data::Dumper;
 use Carp;
 
@@ -29,7 +30,7 @@ our $VERSION = "1.01";
 our @ISA    = qw(LWP::UserAgent);
 our $Debug;
 
-$Debug = 1 unless defined $Debug;
+$Debug = 2 unless defined $Debug;
 # 1 - short overview of execution flow
 # 2 - debug
 
@@ -128,6 +129,8 @@ and the following additional options related to dating service
   cookies_dir
   proxy (proxy URI: http://host:port/ or socks://host:port if LWP::Protocol::socks found)
   proxy_anon (for anon_ua, see above)
+  phone (for login phone confirmations. country code is a separate option - below)
+  phone_code
 
 Session is persistent due to cookies file (one per login), 
 placed in cookies_dir (default is current directory).
@@ -152,6 +155,8 @@ my $cc = delete $options{captcha_callback};
 my $cdir = delete $options{cookies_dir}; $cdir="." unless defined $cdir;
 my $pro = delete $options{proxy};
 my $proa = delete $options{proxy_anon};
+my $ph = delete $options{phone};
+my $phc = delete $options{phone_code};
 
 unless ($options{'agent'}) { $options{'agent'}=$def_agent };
 unless ($options{'parse_head'}) { $options{'parse_head'}=0 };
@@ -167,6 +172,8 @@ $self->{login}=$l;
 $self->{password}=$p;
 $self->{location}=$r;
 $self->{captcha_callback}=$cc;
+$self->{phone}=$ph;
+$self->{phone_code}=$phc;
 
 if ($self->{login}) { 
 	$self->{myid} = $self->{login};
@@ -200,7 +207,7 @@ my $self = shift;
 # remember, we are LWP::UserAgent child
 
 my $lreq; my $lres;
-my $cap="";
+my $cap=""; my $phone_confirmation_requested=0;
 
 ####### GET /
 
@@ -237,19 +244,32 @@ if (($Debug>0) and ($lres->decoded_content =~ /$valid_mamba_login_criterion/)) {
 
 Plogin:
 
-printf STDERR "POST login (\$captcha=$cap)\n" if $Debug>0;
+printf STDERR "POST login (cap=$cap, phone=$phone_confirmation_requested)\n" if $Debug>0;
 
-if ($cap =~ /^$/) {
-	$lreq = POST 'http://www.mamba.ru/ajax/login.phtml?XForm=Login', 
-	[ "s_post" => $s_post, "login" => $self->{login}, "password" => $self->{password} ];
-} else {
-	$lreq = POST 'http://mamba.ru/ajax/login.phtml?XForm=Login', 
-	[ "s_post" => $s_post, "clickUrl" => "", "target" => "", 
-	"login" => $self->{login}, "password" => $self->{password},
-	"phone-code" => "7", "phone" => "", 
-	"login_captcha" => $cap, 
-	"VAnketaID" => "0", "RedirectBack" => "http://mamba.ru/?" ];
+my $o = [ 
+	"s_post" => $s_post, 
+	"login" => $self->{login}, 
+	"password" => $self->{password},
+];
+if ($cap) {
+	$o->{clickUrl} = "";
+	$o->{target} = "";
+	$o->{"phone-code"} = "7";
+	$o->{phone} = "";
+	$o->{"login_captcha"} = $cap;
+	$o->{VAnketaID} = "0";
+	$o->{RedirectBack} = "http://www.mamba.ru/?";
 }
+if ($phone_confirmation_requested) {
+	unless ((defined $self->{phone}) && (defined $self->{phone_code})) {
+		confess "phone number confirmation requested but no phone defined";
+	}
+	$o->{"phone-code"} = $self->{phone_code};
+	$o->{phone} = $self->{phone};
+}
+print STDERR "login options: \n".Dumper $o if $Debug>1;
+ 
+$lreq = POST 'http://www.mamba.ru/ajax/login.phtml?XForm=Login', $o;
 $lreq->header("Accept" => "application/json, text/javascript, */*; q=0.01");
 $lreq->header("X-Requested-With" => "XMLHttpRequest");
 #$lreq->header("Referer" => "Referer: http://www.mamba.ru/");
@@ -268,13 +288,13 @@ unless ($lres->is_success) {
 
 #$lua->cookie_jar->save();
 
-my $t_1  = decode_json $lres->decoded_content;
+if ($Debug>1) {
+	open (l_1, ">:utf8", "l_1.json");
+	print l_1 $lres->decoded_content;
+	close (l_1);
+}
+my $t_1  = decode_json (encode_utf8 ($lres->decoded_content));
 unless ($t_1) {
-	if ($Debug>1) {
-	  open (l_1, ">:utf8", "l_1.json");
-	  print l_1 $lres->decoded_content;
-	  close (l_1);
-	}
 	confess "ajax login returns something not parseable as json";
 }
 print STDERR Dumper ($t_1) if $Debug>1;
@@ -285,8 +305,13 @@ print STDERR Dumper ($t_1) if $Debug>1;
 # incorrect password:
 # {"t":"1342470916960","a":0,"s":1,"e":0,"d":[],"r":0,"XForms":{"Login":{"found":"Incorrect e-mail address or password entered"}}}
 
-unless ($t_1->{"a"} > 0) {
-	confess "ajax login doesn't return positive id, perhaps wrong credentials?";
+unless ($t_1->{a} > 0) {
+	if ((defined $t_1->{phone}) && ($t_1->{phone} > 0)) {
+		carp "phone confirmation requested" if $Debug>0;
+		$phone_confirmation_requested=1;
+		goto Plogin;
+	}
+	confess "ajax login doesn't return positive id, perhaps wrong credentials?\n".Dumper ($t_1);
 }
 
 if ( (!($t_1->{"captcha"})) || ($t_1->{"captcha"} != 1) ) {
@@ -380,7 +405,7 @@ if ($content !~ /$valid_mamba_login_criterion/ ) {
 	}
 
 CheckEntercode:
-if ($content =~ /Введите код/) {
+if ($content =~ /Введите код|пройдите проверку/) {
 	# 2014: recaptcha.
 	# callback accepts $content,
 	# returns raw POST data for /tips or undef on timeout
