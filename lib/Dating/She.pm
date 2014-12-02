@@ -47,7 +47,7 @@ our $VERSION = "1.01";
 #our @ISA    = qw(HTML::TreeBuilder);   # not their child anymore
 our $Debug;
 
-$Debug = 2 unless defined $Debug;
+$Debug = 1 unless defined $Debug;
 # 1 - short overview of execution flow
 # 2 - debug
 
@@ -653,7 +653,7 @@ carp ("added city_lat=".$la." lon=".$lo." for id=".$self->{id}) if $Debug>1;
 
 after_city:
 
-unless ( (keys($self->{distance}) >= 3) and 
+unless ( (keys(%{$self->{distance}}) >= 3) and 
   (!defined($self->{location}) || !defined($self->{location_lat}) || 
   !defined($self->{location_lon})) and 
   ((defined $self->{city_lat}) and (defined $self->{city_lon}))
@@ -664,7 +664,7 @@ unless ( (keys($self->{distance}) >= 3) and
 
 # TODO: limit number of triples
 
-my @dk = map { @$_} [ keys $self->{distance} ];
+my @dk = map { @$_} [ keys %{$self->{distance}} ];
 
 my ($la1, $lo1, $di1, $la2, $lo2, $di2, $la3, $lo3, $di3);
 
@@ -1318,7 +1318,7 @@ if (my $d1=$parser->look_down(_tag=>'div', class=>qr/(^|\s)interests_block($|\s)
 	for my $s1 ($d1->look_down(_tag=>'span', class=>qr/(^|\s)name($|\s)/)) {
 		fc_ok(@fcin02); $ind=1;
 		if ( !($s1->as_trimmed_text ~~ $self->{interests}) ) {
-			push $self->{interests}, $s1->as_trimmed_text;
+			push @{$self->{interests}}, $s1->as_trimmed_text;
 		}
 	}
 	unless ($ind) {fc_fail(@fcin02)}
@@ -1751,7 +1751,7 @@ my $self=shift;
 my $prefix=shift or do { carp "copy_images: \$path argument required"; return 0 };
 my $me=shift or do { carp "copy_images: \$me argument required"; return 0 };
 
-IMG: for my $ikey (keys ($self->{images})) {
+IMG: for my $ikey (keys (%{$self->{images}})) {
    unless (defined($self->{images}->{$ikey}->{localpath})) {
 	my $url=$self->{images}->{$ikey}->{url};
 	my $image = $me->get_anon_url ($url); # for mamba. for other services use get_dating_url
@@ -1873,7 +1873,7 @@ sub distinctions {
 
 my $self=shift;
 my $r;
-my $image_captions; for (keys ($self->{images})) {
+my $image_captions; for (keys (%{$self->{images}})) {
 	my $c=$self->{images}->{$_}->{caption};
 	if (defined($c) and ($c !~ qr/^$/)) {
 		$image_captions .= $c.";";
@@ -1881,7 +1881,7 @@ my $image_captions; for (keys ($self->{images})) {
 }
 my $spcont; 
 if (defined($self->{manual}->{selfportrait})) {
-	for (keys ($self->{manual}->{selfportrait})) {
+	for (keys (%{$self->{manual}->{selfportrait}})) {
 		my $c=$self->{manual}->{selfportrait}->{$_};
 		if (defined($c) and ($c !~ qr/^$/)) {
 			$spcont .= $c.";";
