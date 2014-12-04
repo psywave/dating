@@ -30,7 +30,7 @@ our $VERSION = "1.01";
 our @ISA    = qw(LWP::UserAgent);
 our $Debug;
 
-$Debug = 2 unless defined $Debug;
+$Debug = 1 unless defined $Debug;
 # 1 - short overview of execution flow
 # 2 - debug
 
@@ -538,7 +538,6 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 
 	safety_delay;
 	my $res = $self->request($req);
-	$res->is_success or confess "search ".$res->code;
 
 	my $srch_cnt = $res->decoded_content;
 
@@ -548,6 +547,8 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 	  close (l_s);
 	  #exit;
 	}
+
+	$res->is_success or confess "search ".$res->code;
 
 	if ($srch_cnt !~ /$valid_mamba_login_criterion/ ) { 
 		print STDERR "need login\n" if $Debug>0;
