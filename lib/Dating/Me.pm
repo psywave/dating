@@ -193,6 +193,36 @@ return $self;
 } # new
 
 
+=head2 request_retry
+
+LWP->request with delay and retries, to work around unstable proxies.
+Default number or retries is 5.
+
+  my $lwp_result = $me->request_retry ($lwp_request[, $number_of_retries]);
+
+=cut
+
+sub request_retry {
+my $self = shift;
+my $req = shift; my $retr = shift || 5;
+
+my $res;
+for (my $r=0; $r<$retr; $r++) {
+	safety_delay;
+	$res = $self->request($req);
+	if ($res->is_success) { return $res; }
+	carp "request_retry ".$res->code if $Debug>1;
+}
+
+print STDERR "request_retry failed ".$retr." times\n";
+if ($res->code == 500) {
+	print STDERR "500 content follows: -----\n".$res->decoded_content."-----\n";
+}
+
+return $res;
+
+} # request_retry
+
 
 =head2 login
 
@@ -216,8 +246,7 @@ Getroot:
 print STDERR "getting /\n" if $Debug>0;
 
 $lreq = GET 'http://www.mamba.ru/';
-safety_delay;
-$lres = $self->request($lreq);
+$lres = $self->request_retry($lreq);
 $lres->is_success or confess "login ".$lres->code;
 if ($Debug>1) {
   open (l_0, ">:utf8", "l_0.html");
@@ -274,8 +303,7 @@ $lreq->header("Accept" => "application/json, text/javascript, */*; q=0.01");
 $lreq->header("X-Requested-With" => "XMLHttpRequest");
 #$lreq->header("Referer" => "Referer: http://www.mamba.ru/");
 
-safety_delay;
-$lres = $self->request($lreq);
+$lres = $self->request_retry($lreq);
 unless ($lres->is_success) {
 	if ($lres->code == 302) {
 		# no x-req-with header:
@@ -381,8 +409,7 @@ do {
 print STDERR "fetching ".$url."\n" if $Debug>1;
 $freq = GET $url;
 
-safety_delay;
-$fres = $self->request($freq);
+$fres = $self->request_retry($freq);
 $fres->is_success or do { carp "get_dating_url failed: ".$fres->code; return undef };
 
 $content = $fres->decoded_content;
@@ -415,8 +442,7 @@ if ($content =~ /Введите код|пройдите проверку/) {
 		unless (defined $cap_raw_post) { confess ("can't resolve captcha"); }
 		my $recreq = POST 'http://www.mamba.ru/tips';
 		$recreq->content( $cap_raw_post );
-		safety_delay;
-		$recres = $self->request($recreq);
+		$recres = $self->request_retry($recreq);
 		# returns 301 if success, redirect handled automatically (see new()), then must return 200
 		$recres->is_success or confess "recaptcha isn't accepted or bad redirect? code=".$recres->code;
 		$content = $recres->decoded_content;
@@ -533,11 +559,10 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 	$still_anything_new=0;
 	print STDERR "search results offset: $offset\n" if $Debug>0;
 
-	print STDERR "search request: GET ".$search_query_nooffset."&offset=".$offset."\n" if ($Debug>1);
+	print STDERR "search request: GET ".$search_query_nooffset."&offset=".$offset."\n" if $Debug>1;
 	my $req = GET $search_query_nooffset."&offset=".$offset ;
 
-	safety_delay;
-	my $res = $self->request($req);
+	my $res = $self->request_retry($req);
 
 	my $srch_cnt = $res->decoded_content;
 
@@ -545,7 +570,6 @@ for (my $offset = $initial_offset; $still_anything_new; $offset=$offset+10) {
 	  open (l_s, ">:utf8", "l_s.html");
 	  print l_s $srch_cnt;
 	  close (l_s);
-	  #exit;
 	}
 
 	$res->is_success or confess "search ".$res->code;
