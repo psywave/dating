@@ -492,8 +492,6 @@ String of keywords and phrases related to user interests in sex. Default is unde
 
 
 sub new {
-#	#shift->SUPER::new(@_, weight => 0.05, name => 'candle')
-	#my $self = shift->SUPER::new(@_);
 	my $class = shift;
 	#$class = ref($class) || $class;
 	my $self = {};
@@ -896,7 +894,7 @@ if( ($parser->look_down(_tag=>'div', class=>qr/noPhoto/)) and (!defined($self->{
 my @fni01=("mamba nick: h1 class infoname", 0);
 #
 if (my $h1=$parser->look_down(_tag=>'h1', class=>qr/infoname/i)) {
-	$self->{nick} = $h1->as_trimmed_text;
+	$self->{nick} = as_trimmed_text_notags ($h1);
 	fc_ok(@fni01);
 } else {
 	fc_fail(@fni01);

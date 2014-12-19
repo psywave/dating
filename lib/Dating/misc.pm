@@ -26,7 +26,7 @@ use Data::Dumper;
 require Exporter;
 our @ISA = qw(Exporter);
 # TODO: don't export that much
-our @EXPORT = qw(safety_delay netsearch parse_anketa_fields fc_ok fc_fail as_trimmed_text_br serialize deserialize update_value $profile_fieldlist @profile_fields $profile_field_placeholders $profile_field_update_placeholders cut_sample trunc2 janis tid_is_runtime sql_statement_debug keybts city_coordinates secs2str);
+our @EXPORT = qw(safety_delay netsearch parse_anketa_fields fc_ok fc_fail as_trimmed_text_br as_trimmed_text_notags serialize deserialize update_value $profile_fieldlist @profile_fields $profile_field_placeholders $profile_field_update_placeholders cut_sample trunc2 janis tid_is_runtime sql_statement_debug keybts city_coordinates secs2str);
 
 our $VERSION = "1.00";
 our $Debug;
@@ -125,6 +125,26 @@ for ($self->look_down(_tag=>'br')) {
 	$_->replace_with(" ");
 }
 return $self->as_trimmed_text;
+}
+
+
+=head2 as_trimmed_text_notags
+
+HTML::Element::as_trimmed_text() replacement
+which doesn't descend into inner tags.
+
+$result = as_trimmed_text_notags ($element);
+
+=cut
+sub as_trimmed_text_notags {
+my $self=shift;
+my $nt="";
+foreach my $item_r ($self->content_refs_list) {
+	next if ref $$item_r;
+	$nt=$nt.$$item_r." ";
+}
+$nt =~ s/^\s+|\s+$//g ;
+return $nt;
 }
 
 
