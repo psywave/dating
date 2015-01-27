@@ -253,10 +253,10 @@ if ($Debug>1) {
   print l_0 $lres->decoded_content;
   close (l_0);
 }
-my $captcha_uri;
-if ($lres->decoded_content =~ /"(\/captcha\.php\?.*)"/ ) { $captcha_uri = $1; }
-  else { $captcha_uri=""; }
-print STDERR "captcha_uri=".$captcha_uri . "\n" if $Debug>1;
+#my $captcha_uri;
+#if ($lres->decoded_content =~ /"(\/captcha\.php\?.*)"/ ) { $captcha_uri = $1; }
+#  else { $captcha_uri=""; }
+#print STDERR "captcha_uri=".$captcha_uri . "\n" if $Debug>1;
 
 # get new feature: s_post=[32 chars] from mambo js structure on main page
 my $s_post;
@@ -432,7 +432,7 @@ if ($content !~ /$valid_mamba_login_criterion/ ) {
 	}
 
 CheckEntercode:
-if ($content =~ /Введите код|пройдите проверку/) {
+if ($content =~ /Введите код|пройдите проверку/ && $` !~ /visible:.*isCaptcha/) {
 	# 2014: recaptcha.
 	# callback accepts $content,
 	# returns raw POST data for /tips or undef on timeout
