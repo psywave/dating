@@ -77,7 +77,7 @@ Client robot features
 LICENSE
 -------
 
-    Copyright 2012-2014, Anatoly Schrödinger <weirdo@noipmail.com>
+    Copyright 2012-2014, Anatoly Schrödinger <weirdo2@opmbx.org>
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself. See

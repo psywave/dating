@@ -5,7 +5,7 @@ package Dating::Me;
 # Dating - social profile database
 #
 # Anatoly Schrödinger
-# weirdo@noipmail.com
+# weirdo2@opmbx.org
 #
 # Dating/Me.pm is the dating service user identity (login+password) 
 # capable of browsing dating site.
@@ -634,7 +634,7 @@ return @profile_links;
 
 =head1 LICENSE
 
-Copyright 2012-2014, Anatoly Schrödinger <weirdo@noipmail.com>
+Copyright 2012-2014, Anatoly Schrödinger <weirdo2@opmbx.org>
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

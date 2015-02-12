@@ -5,7 +5,7 @@ package Dating::math;
 # Dating - social profile database
 #
 # Anatoly Schrödinger
-# weirdo@noipmail.com
+# weirdo2@opmbx.org
 #
 # Dating/math.pm is for custom math mini-lib and geo functions
 # Warning: this file lacks POD

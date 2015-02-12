@@ -5,7 +5,7 @@ package Dating::She;
 # Dating - social profile database
 #
 # Anatoly Schrödinger
-# weirdo@noipmail.com
+# weirdo2@opmbx.org
 #
 # Dating/She.pm is dating questionnaire (profile) object 
 #
@@ -2001,7 +2001,7 @@ if (defined($self->{height}) and defined($self->{weight})
 
 =head1 LICENSE
 
-Copyright 2012-2014, Anatoly Schrödinger <weirdo@noipmail.com>
+Copyright 2012-2014, Anatoly Schrödinger <weirdo2@opmbx.org>
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

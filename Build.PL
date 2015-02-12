@@ -7,7 +7,7 @@ my $build = Module::Build->new
 (
 	module_name => 'Dating',
 	license => 'perl',
-	dist_author => 'Anatoly Schrödinger <weirdo@noipmail.com>',
+	dist_author => 'Anatoly Schrödinger <weirdo2@opmbx.org>',
 	requires => {
 		'perl'=> '5.5.0',
 		'Carp' => 0,
