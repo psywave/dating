@@ -634,6 +634,7 @@ sub location_guess {
 
 my $self = shift;
 my $dbh = shift;
+my $farmsg="refpoint %s is much farther than other(s), possible dating service failure\n";
 
 unless ( defined ($self->{city}) ) { return 0 }  # because for filtering location we need city coords
 unless ($self->{city} =~ /^(.*?),\s*(.*)$/) {
@@ -684,6 +685,12 @@ K: 		for (my $k=$j+1; $k<=($#dk); $k++) {
 				print STDERR "reference triangle perimeter = ".$refpt_sum.", reference distances sum = ".$di1."+".$di2."+".$di3."=".$dist_sum." km\n";
 			}
 			if ($dist_sum > $refpt_sum) {
+				# alert on mutually inconsistent distances
+				if ($Debug>0 && ($di1 < $refpt_sum || $di2 < $refpt_sum || $di3 < $refpt_sum)) {
+					if ($di1 > $refpt_sum) { printf STDERR $farmsg, $dk[$i] }
+					if ($di2 > $refpt_sum) { printf STDERR $farmsg, $dk[$j] }
+					if ($di3 > $refpt_sum) { printf STDERR $farmsg, $dk[$k] }
+				}
 				print STDERR "skipping triple\n" if $Debug>0;
 				next K;
 			} else {
