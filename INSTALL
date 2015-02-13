@@ -125,12 +125,11 @@ To get this work, you need to fetch the profile in question from at least
 three accounts.
 
 During account registration, select some exact location on the map, then 
-reload page and look for your coordinates in page source. They look like:
+reload page and look for arguments of the following HTTP request:
 
-	lat: 55.6424,
-	lng: 24.8342,
+        GET http://maps.googleapis.com/maps/gen_204?...
 
-Use these numbers when creating Dating::Me objects:
+It contains your coordinates. Use them when creating Dating::Me objects:
 
 	my $me = Dating::Me->new ( 
 	    login =>..., password =>..., location => "55.6424 24.8342");
