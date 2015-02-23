@@ -696,6 +696,12 @@ K: 		for (my $k=$j+1; $k<=($#dk); $k++) {
 			} else {
 				print STDERR "refpoints triple is suitable for trilateration\n" if $Debug>0;
 			}
+			for (\$di1, \$di2, \$di3) {
+				if ($$_ == 0) {
+					print STDERR "one or more distances are zero, what does it mean? skipping triple\n" if $Debug>0;
+					next K;
+				}
+			}
 			($self->{location_lat}, $self->{location_lon}) = trilaterate (
 				$la1,$lo1,$di1, 
 				$la2,$lo2,$di2, 
