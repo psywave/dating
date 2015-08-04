@@ -236,7 +236,7 @@ sub login {
 my $self = shift;
 # remember, we are LWP::UserAgent child
 
-my $lreq; my $lres;
+my $lreq; my $lres; my $mainpage_content;
 my $cap=""; my $phone_confirmation_requested=0;
 
 ####### GET /
@@ -257,6 +257,9 @@ if ($Debug>1) {
 #if ($lres->decoded_content =~ /"(\/captcha\.php\?.*)"/ ) { $captcha_uri = $1; }
 #  else { $captcha_uri=""; }
 #print STDERR "captcha_uri=".$captcha_uri . "\n" if $Debug>1;
+
+# save for captcha search
+$mainpage_content = $lres->decoded_content;
 
 # get new feature: s_post=[32 chars] from mambo js structure on main page
 my $s_post;
@@ -333,6 +336,30 @@ print STDERR Dumper ($t_1) if $Debug>1;
 # incorrect password:
 # {"t":"1342470916960","a":0,"s":1,"e":0,"d":[],"r":0,"XForms":{"Login":{"found":"Incorrect e-mail address or password entered"}}}
 
+if ( !($t_1->{"captcha"}) ) {
+	print STDERR "no captcha after POST login\n" if $Debug>0;
+} else {
+	#### Captcha
+	print STDERR "captcha ($t_1->{'captcha'}) is requested after POST login\n" if $Debug>0;
+	print STDERR "captcha_title: $t_1->{'d'}->{'captcha_title'}\n" if $Debug>1;
+	if (defined ($self->{captcha_callback}) && ref($self->{captcha_callback})) {
+		my $cap_raw_post = &{ $self->{captcha_callback} } ($mainpage_content);
+		unless (defined $cap_raw_post) { confess ("can't resolve captcha"); }
+		my $recreq = POST 'http://www.mamba.ru/tips';
+		$recreq->content( $cap_raw_post );
+		my $recres = $self->request_retry($recreq);
+		# returns 301 if success, redirect handled automatically (see new()), then must return 200
+		$recres->is_success or confess "recaptcha isn't accepted or bad redirect? code=".$recres->code;
+		#$content = $recres->decoded_content;
+		#goto Plogin;
+		goto Getroot;
+	} else {
+		confess ("captcha resolver isn't provided");
+	}
+	#confess ("captcha is not handled in POST login");
+
+} # POST login returns captcha
+
 unless ($t_1->{a} > 0) {
 	if ((defined $t_1->{phone}) && ($t_1->{phone} > 0)) {
 		carp "phone confirmation requested" if $Debug>0;
@@ -341,41 +368,6 @@ unless ($t_1->{a} > 0) {
 	}
 	confess "ajax login doesn't return positive id, perhaps wrong credentials?\n".Dumper ($t_1);
 }
-
-if ( (!($t_1->{"captcha"})) || ($t_1->{"captcha"} != 1) ) {
-	print STDERR "no captcha after POST login\n" if $Debug>0;
-} else {
-
-#### Captcha
-
-print STDERR "captcha is requested after POST login\n" if $Debug>0;
-print STDERR "captcha: $t_1->{'d'}->{'captcha_title'}\n" if $Debug>1;
-
-confess ("recaptcha is not handled in POST login");
-# old captcha variant:
-#if (defined ($self->{captcha_callback}) && ref($self->{captcha_callback})) {
-#
-#	# GET /captcha.php
-#	# ? r=1333548459935
-#	# & s=e8e8674d74bcb7e3c0d5520c1704da41
-#	# & name=login_captcha
-#	# & rand=1333548454
-#	# HTTP/1.1\r\n
-#
-#	$lreq = GET 'http://www.mamba.ru' . $captcha_uri;
-#	safety_delay;
-#	$lres = $self->request($lreq);
-#	$lres->is_success or confess "login ".$lres->code;
-#
-#	$cap = &{ $self->{captcha_callback} } ($lres->decoded_content) 
-#	  or confess ("captcha resolver returned false");
-#} else {
-#	confess ("captcha resolver isn't provided");
-#}
-
-goto Plogin;
-
-} # POST login returns captcha
 
 goto Getroot;
 
@@ -538,8 +530,10 @@ if (@_) {
     %f = @_;
 }
 
-# ?t=a&sz=b&ia=M&lf=F&af=23&at=33&s_c=248_190_0_0&target=
-# ?ia=M&lf=F&af=24&at=33&wp=1&wv=0&wvc=0&ni=1&wr=0&gid=1293326687&t=a&sz=b&s_c=248_190_0_0&geo=0&s_tg=&offset=0&nchanged=1293230491&noid=1283375688
+# http://www.mamba.ru/search.phtml?t=a&sz=b&ia=M&lf=F&af=22&at=33&s_c=248_190_0_0&target=&offset=40
+# 2015:
+# http://www.mamba.ru/search.phtml?ia=M&lf=F&af=18&at=80&t=a&s_c=248_0_0_0&form=1
+# but former query still works
 
 my $search_query_nooffset = "http://www.mamba.ru/search.phtml?t=a&sz=b"
   ."&ia=". (defined $f{'mysex'} ? $f{'mysex'} : 'M')
